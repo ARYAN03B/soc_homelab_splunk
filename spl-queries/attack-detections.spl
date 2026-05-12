@@ -1,0 +1,175 @@
+==============================================================================
+ATTACK DETECTION QUERIES
+==============================================================================
+Each query is mapped to a specific MITRE ATT&CK technique.
+Save these as Splunk Alerts to trigger automatically.
+==============================================================================
+
+
+==============================================================================
+DETECTION 1: System Information Discovery
+MITRE ATT&CK: T1082
+==============================================================================
+Attackers run systeminfo, hostname, whoami after gaining initial access to
+fingerprint the system. Legitimate too — alert thresholds matter.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='CommandLine'>(?<CommandLine>[^<]+)</Data>"
+| rex field=_raw "<Data Name='User'>(?<User>[^<]+)</Data>"
+| search Image="*systeminfo.exe" OR Image="*hostname.exe" OR Image="*whoami.exe" 
+      OR Image="*ipconfig.exe" OR Image="*net.exe"
+| table _time, User, Image, CommandLine
+| sort -_time
+
+
+==============================================================================
+DETECTION 2: Encoded PowerShell Execution
+MITRE ATT&CK: T1059.001
+==============================================================================
+Encoded PowerShell is a heavy malware indicator. Legitimate use is rare.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='CommandLine'>(?<CommandLine>[^<]+)</Data>"
+| rex field=_raw "<Data Name='ParentImage'>(?<ParentImage>[^<]+)</Data>"
+| rex field=_raw "<Data Name='User'>(?<User>[^<]+)</Data>"
+| search CommandLine="*-EncodedCommand*" OR CommandLine="*-enc *" 
+      OR CommandLine="*FromBase64String*"
+| table _time, User, ParentImage, CommandLine
+| sort -_time
+
+
+==============================================================================
+DETECTION 3: Brute Force Authentication (Windows Logon Failures)
+MITRE ATT&CK: T1110
+==============================================================================
+Detects 10+ failed logons within 5 minutes from one source IP / username.
+
+index=endpoint source="WinEventLog:Security"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=4625
+| rex field=_raw "<Data Name='TargetUserName'>(?<TargetUserName>[^<]+)</Data>"
+| rex field=_raw "<Data Name='IpAddress'>(?<IpAddress>[^<]+)</Data>"
+| bucket _time span=5m
+| stats count by TargetUserName, IpAddress, _time
+| where count > 10
+| sort -count
+
+
+==============================================================================
+DETECTION 4: Local Admin Account Creation
+MITRE ATT&CK: T1136.001
+==============================================================================
+Attacker creating new user/admin accounts for persistence.
+
+index=endpoint source="WinEventLog:Security"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=4720 OR EventID=4728 OR EventID=4732
+| rex field=_raw "<Data Name='TargetUserName'>(?<TargetUserName>[^<]+)</Data>"
+| rex field=_raw "<Data Name='SubjectUserName'>(?<SubjectUserName>[^<]+)</Data>"
+| table _time, EventID, SubjectUserName, TargetUserName
+
+
+==============================================================================
+DETECTION 5: LSASS Memory Access (Credential Dumping)
+MITRE ATT&CK: T1003.001
+==============================================================================
+Mimikatz, Pypykatz, and similar tools access LSASS memory.
+GrantedAccess 0x1010, 0x1410, 0x147a are common Mimikatz signatures.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=10
+| rex field=_raw "<Data Name='SourceImage'>(?<SourceImage>[^<]+)</Data>"
+| rex field=_raw "<Data Name='TargetImage'>(?<TargetImage>[^<]+)</Data>"
+| rex field=_raw "<Data Name='GrantedAccess'>(?<GrantedAccess>[^<]+)</Data>"
+| search TargetImage="*lsass.exe"
+| search GrantedAccess IN ("0x1010", "0x1410", "0x147a", "0x1438", "0x143a")
+| table _time, SourceImage, TargetImage, GrantedAccess
+
+
+==============================================================================
+DETECTION 6: Scheduled Task Creation
+MITRE ATT&CK: T1053.005
+==============================================================================
+Common persistence technique.
+
+index=endpoint source="WinEventLog:Security"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=4698
+| rex field=_raw "<Data Name='SubjectUserName'>(?<User>[^<]+)</Data>"
+| rex field=_raw "<Data Name='TaskName'>(?<TaskName>[^<]+)</Data>"
+| table _time, User, TaskName
+
+
+==============================================================================
+DETECTION 7: Suspicious Parent-Child Process (Office spawning shell)
+MITRE ATT&CK: T1566.001
+==============================================================================
+Word/Excel spawning cmd.exe or powershell.exe = phishing payload executed.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='ParentImage'>(?<ParentImage>[^<]+)</Data>"
+| rex field=_raw "<Data Name='CommandLine'>(?<CommandLine>[^<]+)</Data>"
+| search (ParentImage="*winword.exe" OR ParentImage="*excel.exe" OR ParentImage="*outlook.exe")
+      (Image="*cmd.exe" OR Image="*powershell.exe" OR Image="*wscript.exe")
+| table _time, ParentImage, Image, CommandLine
+
+
+==============================================================================
+DETECTION 8: PowerShell Download Cradle
+MITRE ATT&CK: T1059.001 / T1105
+==============================================================================
+Catches Invoke-WebRequest, DownloadString, and similar fetch patterns.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='CommandLine'>(?<CommandLine>[^<]+)</Data>"
+| search CommandLine="*Invoke-WebRequest*" OR CommandLine="*IWR *"
+      OR CommandLine="*DownloadString*" OR CommandLine="*DownloadFile*"
+      OR CommandLine="*Net.WebClient*" OR CommandLine="*Start-BitsTransfer*"
+| table _time, User, CommandLine
+
+
+==============================================================================
+DETECTION 9: Successful Logon After Brute Force
+MITRE ATT&CK: T1110 (chained)
+==============================================================================
+A successful logon (4624) on an account that recently had many failures (4625).
+This indicates the attacker likely guessed the password.
+
+index=endpoint source="WinEventLog:Security"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| rex field=_raw "<Data Name='TargetUserName'>(?<TargetUserName>[^<]+)</Data>"
+| rex field=_raw "<Data Name='IpAddress'>(?<IpAddress>[^<]+)</Data>"
+| eval result = if(EventID=4625, "fail", if(EventID=4624, "success", null()))
+| stats values(result) as results count(eval(result="fail")) as fails 
+        count(eval(result="success")) as success
+        by TargetUserName, IpAddress
+| where fails > 5 AND success > 0
+
+
+==============================================================================
+DETECTION 10: Living-Off-the-Land Binaries (LOLBins)
+MITRE ATT&CK: Various
+==============================================================================
+Catches abuse of legitimate Windows binaries (LOLBins).
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='CommandLine'>(?<CommandLine>[^<]+)</Data>"
+| search Image IN ("*certutil.exe", "*bitsadmin.exe", "*mshta.exe", 
+                   "*regsvr32.exe", "*rundll32.exe", "*wmic.exe", 
+                   "*installutil.exe", "*msbuild.exe")
+| table _time, Image, CommandLine, User
+| sort -_time

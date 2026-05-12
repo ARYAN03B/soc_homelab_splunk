@@ -1,0 +1,76 @@
+==============================================================================
+DATA VALIDATION SPL QUERIES
+==============================================================================
+Use these queries during initial setup to verify the data pipeline is working.
+==============================================================================
+
+
+==============================================================================
+QUERY 1: Verify ALL data flowing from the Windows endpoint
+==============================================================================
+Use this immediately after installing the forwarder. If you see counts > 0,
+data is flowing into Splunk.
+
+index=endpoint host=DESKTOP-* OR host=WIN-TARGET
+| stats count by sourcetype
+
+
+==============================================================================
+QUERY 2: Verify ALL sources are reporting
+==============================================================================
+Confirms all 4 Windows Event Log channels are being collected.
+
+index=endpoint host=DESKTOP-* OR host=WIN-TARGET
+| stats count by source, sourcetype
+
+
+==============================================================================
+QUERY 3: Verify Sysmon Event ID distribution
+==============================================================================
+Shows the breakdown of Sysmon event types. Should see lots of EventID=1
+(process creation) and EventID=3 (network connection).
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| stats count by EventID
+| sort -count
+
+
+==============================================================================
+QUERY 4: Live tail (real-time view of incoming events)
+==============================================================================
+Use this to confirm events are arriving in real-time as you generate them.
+
+index=endpoint host=DESKTOP-* OR host=WIN-TARGET
+| head 20
+| table _time, host, sourcetype, source
+
+
+==============================================================================
+QUERY 5: Check forwarder connection health (Splunk internal logs)
+==============================================================================
+Run this if forwarders look offline. Shows connection status.
+
+index=_internal source=*splunkd.log* 
+("Connection to" OR "AutoLoadBalancedConnectionStrategy")
+| head 50
+
+
+==============================================================================
+QUERY 6: Verify disk space isn't blocking indexing
+==============================================================================
+If this returns results, Splunk has paused indexing due to low disk space.
+
+index=_internal source=*splunkd.log* "MinFreeSpace" OR "diskspace"
+| tail 20
+
+
+==============================================================================
+QUERY 7: Find all unique hosts reporting in
+==============================================================================
+Useful when you have multiple forwarders (Windows + Linux later).
+
+| metadata type=hosts
+| eval recent_data = if(recentTime > relative_time(now(), "-15m"), "✅ active", "❌ stale")
+| table host, recent_data, recentTime, totalCount
+| sort -recentTime

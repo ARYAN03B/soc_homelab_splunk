@@ -1,0 +1,161 @@
+==============================================================================
+THREAT HUNTING QUERIES
+==============================================================================
+Unlike detection alerts (which fire on known bad), these queries help you
+proactively HUNT for suspicious activity that may not have triggered alerts.
+==============================================================================
+
+
+==============================================================================
+HUNT 1: Rare Process Execution
+==============================================================================
+Find processes that have executed only a few times in your environment.
+Rare = often malicious.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| stats count by Image
+| where count < 5
+| sort count
+
+
+==============================================================================
+HUNT 2: Unusual Parent-Child Process Pairs
+==============================================================================
+Surfaces uncommon parent → child relationships that may indicate compromise.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='ParentImage'>(?<ParentImage>[^<]+)</Data>"
+| stats count by ParentImage, Image
+| where count < 3
+| sort count
+
+
+==============================================================================
+HUNT 3: Processes Making External Network Connections
+==============================================================================
+Lists every process that made an outbound connection.
+Look for unexpected ones (e.g., notepad.exe shouldn't be reaching the internet).
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=3
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='DestinationIp'>(?<DestinationIp>[^<]+)</Data>"
+| stats dc(DestinationIp) as uniq_dest count by Image
+| sort -uniq_dest
+
+
+==============================================================================
+HUNT 4: Long Command Lines (Obfuscation Indicator)
+==============================================================================
+Very long command lines often hide encoded payloads, base64, or obfuscation.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='CommandLine'>(?<CommandLine>[^<]+)</Data>"
+| eval cmd_length = len(CommandLine)
+| where cmd_length > 500
+| table _time, Image, cmd_length, CommandLine
+| sort -cmd_length
+
+
+==============================================================================
+HUNT 5: Processes Running From Unusual Locations
+==============================================================================
+Executables in temp, downloads, AppData are highly suspicious.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| search Image="*\\Temp\\*" OR Image="*\\Downloads\\*" 
+      OR Image="*\\AppData\\*" OR Image="*\\Public\\*"
+| stats count by Image, User
+| sort -count
+
+
+==============================================================================
+HUNT 6: After-Hours Process Activity
+==============================================================================
+Activity outside business hours can indicate compromise or insider threat.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| eval hour = strftime(_time, "%H")
+| where hour < 6 OR hour > 22
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='User'>(?<User>[^<]+)</Data>"
+| stats count by User, Image, hour
+| sort -count
+
+
+==============================================================================
+HUNT 7: Persistence Via Registry Run Keys
+==============================================================================
+Registry modifications to autorun locations.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=13
+| rex field=_raw "<Data Name='TargetObject'>(?<TargetObject>[^<]+)</Data>"
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='Details'>(?<Details>[^<]+)</Data>"
+| search TargetObject="*\\Run\\*" OR TargetObject="*\\RunOnce\\*"
+      OR TargetObject="*\\CurrentVersion\\Image File Execution Options\\*"
+| table _time, Image, TargetObject, Details
+
+
+==============================================================================
+HUNT 8: DNS to Suspicious TLDs
+==============================================================================
+DNS queries to free/abused TLDs (.tk, .top, .xyz, .ru, .cn).
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=22
+| rex field=_raw "<Data Name='QueryName'>(?<QueryName>[^<]+)</Data>"
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| search QueryName="*.tk" OR QueryName="*.top" OR QueryName="*.xyz" 
+      OR QueryName="*.ru" OR QueryName="*.cn" OR QueryName="*.ml"
+| stats count by QueryName, Image
+
+
+==============================================================================
+HUNT 9: New Service Installation
+==============================================================================
+A common persistence technique.
+
+index=endpoint source="WinEventLog:System"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=7045
+| rex field=_raw "<Data Name='ServiceName'>(?<ServiceName>[^<]+)</Data>"
+| rex field=_raw "<Data Name='ImagePath'>(?<ImagePath>[^<]+)</Data>"
+| table _time, ServiceName, ImagePath
+| sort -_time
+
+
+==============================================================================
+HUNT 10: Account Enumeration
+==============================================================================
+Repeated `net user`, `net group`, AD enumeration commands.
+
+index=endpoint sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+| rex field=_raw "<EventID>(?<EventID>\d+)</EventID>"
+| search EventID=1
+| rex field=_raw "<Data Name='CommandLine'>(?<CommandLine>[^<]+)</Data>"
+| rex field=_raw "<Data Name='User'>(?<User>[^<]+)</Data>"
+| search CommandLine="net user*" OR CommandLine="net group*" 
+      OR CommandLine="net localgroup*" OR CommandLine="*Get-ADUser*"
+      OR CommandLine="*Get-ADGroup*"
+| stats count by User, CommandLine
+| where count > 3
+| sort -count
