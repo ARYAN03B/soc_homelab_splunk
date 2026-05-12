@@ -41,10 +41,3 @@ Place in: `/opt/splunk/etc/system/local/`
 **After any config change:** `sudo /opt/splunk/bin/splunk restart`
 
 ---
-
-## ⚠️ Important Notes
-
-1. **File extensions matter** — `inputs.conf` is correct, `inputs.conf.txt` will be silently ignored
-2. **Notepad gotcha** — when saving in Notepad, set "Save as type" to **All Files** before naming
-3. **No spaces in file names** — Splunk is strict about config file naming
-4. **Indentation** — `.conf` files do not require indentation, but should use blank lines between stanzas
