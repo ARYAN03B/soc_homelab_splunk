@@ -25,7 +25,7 @@ This folder contains the high-level design of the SOC homelab.
 │         └────────────────────┴────────────────────┘           │
 │                              │                                │
 │                    ┌─────────▼─────────┐                      │
-│                    │ KALI (upcoming)   │                      │
+│                    │      KALI         │                      │
 │                    │ 192.168.10.50     │                      │
 │                    │ Attacker          │                      │
 │                    └───────────────────┘                      │
