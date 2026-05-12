@@ -1,27 +1,5 @@
 # Screenshots
 
-Visual proof of the lab in action.
-
-## 📸 Suggested Screenshots to Add
-
-Replace this README with actual screenshots showing:
-
-1. **architecture.png** — Network diagram of the lab
-2. **splunk-data-flowing.png** — Splunk Search showing events by sourcetype
-3. **attack-detected.png** — A detection query firing on an Atomic test
-4. **sysmon-event-detail.png** — Expanded Sysmon Event ID 1 with command line
-5. **mitre-coverage.png** — MITRE ATT&CK heatmap (from Splunk Security Essentials)
-6. **forwarder-running.png** — Get-Service SplunkForwarder showing Running
-7. **soc-dashboard.png** — The SOC overview dashboard (once built)
-
-## 📐 Recommended Size
-
-- Width: 1200–1600 px
-- Format: PNG (better for screenshots than JPG)
-- Annotate key elements with arrows/boxes if helpful
-
-## 🎯 Tips
-
-- Crop out sensitive info (real IPs, account names, etc.)
-- Add timestamps where relevant
-- Use a consistent style across all screenshots
+<img width="733" height="173" alt="Screenshot 2026-05-12 021015" src="https://github.com/user-attachments/assets/680fb75a-5a15-432b-a44f-3c333e58ae50" />
+<img width="1913" height="1029" alt="Screenshot 2026-05-12 020717" src="https://github.com/user-attachments/assets/2ded3ade-df8b-4765-88ee-505ff10bdb81" />
+<img width="1919" height="1027" alt="Screenshot 2026-05-12 021259" src="https://github.com/user-attachments/assets/ad7503ea-9cdb-4419-a43b-09c20f55cae6" />
